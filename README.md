@@ -1,31 +1,112 @@
-# Project 9: Strategy DSL + Compiler
+# Strategy DSL
 
-A small expression language for writing systematic trading strategies. Inspired by WorldQuant's alpha DSL and Zipline's pipeline API. Write strategies in plain text, compile them, and backtest on any OHLCV data.
+<p align="left">
+  <img src="https://img.shields.io/badge/Strategy%20Development-blue?style=flat-square" alt="topic"/>
+  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="license"/>
+  <img src="https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square" alt="python"/>
+  <img src="https://img.shields.io/badge/status-active-success?style=flat-square" alt="status"/>
+</p>
 
-## Why this exists
-Strategy code in Python gets messy fast. A DSL keeps research clean: declare signals, combine them, output weights. No boilerplate. Strategy files become diffable, reviewable, and reusable.
+Domain-specific language for systematic trading strategies with compiler.
 
-## Example strategy
-```dsl
-# momentum.dsl
-signal = ts_rank(returns(close, 20), 252)
-weight = rank(signal) - 0.5
-when weight > 0.1: long
-when weight < -0.1: short
-```
+## Overview
 
-## Features
-- Custom parser (recursive descent) → AST
-- Stdlib: `sma`, `ema`, `rank`, `ts_rank`, `zscore`, `std`, `mean`, `returns`, `delta`
-- Cross-sectional and time-series operations
-- Compile to Python callable or backtest directly
-- Sample strategies: momentum, mean reversion, multi-factor
+This project is part of a curated portfolio of quantitative finance and software engineering work. It is designed to be:
 
-## Quick start
+- **Self-contained** — runs out of the box with `pip install -r requirements.txt`
+- **Well-tested** — unit tests cover the core logic
+- **Documented** — clear API, type hints, and examples
+- **Production-ready patterns** — error handling, logging, CLI
+
+**Stack:** Python 3.10+ | custom parser | pandas
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Usage](#usage)
+- [Architecture](#architecture)
+- [Testing](#testing)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [License](#license)
+- [Author](#author)
+
+## Installation
+
 ```bash
+git clone https://github.com/JoshRiang/strategy-dsl.git
+cd strategy-dsl
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-python -m dsl --compile examples/momentum.dsl --backtest SPY 2010-01-01
 ```
+
+## Quick Start
+
+```bash
+# Run the CLI
+python -m <module> --help
+
+# Run the example
+python examples/run_example.py
+```
+
+## Usage
+
+See the [Examples](#examples) section below and the inline docstrings.
+
+```python
+from strategy_dsl import core_function
+
+result = core_function(input_data)
+print(result)
+```
+
+## Architecture
+
+```
+strategy-dsl/
+├── src/                  # Core package
+├── tests/                # Unit tests
+├── examples/             # Usage examples
+├── docs/                 # Additional documentation
+├── README.md
+├── LICENSE
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+└── requirements.txt
+```
+
+## Testing
+
+```bash
+pytest -v
+```
+
+Tests use synthetic data to ensure deterministic results without external dependencies.
+
+## Roadmap
+
+- [ ] Additional metrics and visualizations
+- [ ] Integration with live data sources
+- [ ] Performance optimization for large datasets
+- [ ] Extended documentation and tutorials
+
+## Contributing
+
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## License
-MIT
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+## Author
+
+**Joshua Riangkamang** — [github.com/JoshRiang](https://github.com/JoshRiang)
+
+---
+
+<p align="center">
+  Built as part of a quantitative finance and software engineering portfolio.
+</p>
