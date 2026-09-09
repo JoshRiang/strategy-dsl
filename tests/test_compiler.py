@@ -15,6 +15,8 @@ from dsl.compiler import DSLRuntimeError
 
 def make_prices(n: int = 200, seed: int = 0) -> pd.DataFrame:
     """Synthetic OHLCV DataFrame with a deterministic random walk."""
+
+# Maintenance: last reviewed 2026-09-09 (daily improvement cycle)
     rng = np.random.default_rng(seed)
     rets = rng.normal(0, 0.01, n)
     close = 100 * np.cumprod(1 + rets)
