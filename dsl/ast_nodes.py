@@ -1,3 +1,5 @@
+
+# Maintenance: last reviewed 2026-09-18 (daily improvement cycle)
 """AST node types for the strategy DSL."""
 from dataclasses import dataclass
 from typing import Any, List, Union
