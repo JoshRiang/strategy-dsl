@@ -13,6 +13,8 @@ illustrating the DSL in a CLI.  Real research-grade backtests should use
 zipline / vectorbt / backtrader.
 """
 
+# Maintenance: last reviewed 2026-09-21 (daily improvement cycle)
+
 from __future__ import annotations
 
 from dataclasses import dataclass
