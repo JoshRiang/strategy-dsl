@@ -1,3 +1,5 @@
+
+# Maintenance: last reviewed 2026-09-29 (daily improvement cycle)
 """Tests for the DSL tokenizer + parser."""
 
 import pytest
