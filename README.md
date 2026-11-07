@@ -1,38 +1,22 @@
 # Strategy DSL
 
-<p align="left">
-  <img src="https://img.shields.io/badge/Strategy%20Development-blue?style=flat-square" alt="topic"/>
-  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="license"/>
-  <img src="https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square" alt="python"/>
-  <img src="https://img.shields.io/badge/status-active-success?style=flat-square" alt="status"/>
-</p>
+Domain-specific language for trading strategies: parse, compile, backtest.
 
-Domain-specific language for systematic trading strategies with compiler.
+A small expression language for defining trading strategies as weight signals. Grammar:
 
-## Overview
+```
+program     := statement*
+statement   := assignment | when
+assignment  := IDENT '=' expr NEWLINE
+when        := 'when' expr ':' action
+action      := 'long' | 'short' | 'flat' | 'scale' '(' expr ')'
+expr        := term (('+' | '-') term)*
+term        := factor (('*' | '/') factor)*
+factor      := call | NUMBER | IDENT | '(' expr ')' | '-' factor
+call        := IDENT '(' args ')'
+```
 
-This project is part of a curated portfolio of quantitative finance and software engineering work. It is designed to be:
-
-- **Self-contained** — runs out of the box with `pip install -r requirements.txt`
-- **Well-tested** — unit tests cover the core logic
-- **Documented** — clear API, type hints, and examples
-- **Production-ready patterns** — error handling, logging, CLI
-
-**Stack:** Python 3.10+ | custom parser | pandas
-
-## Table of Contents
-
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Usage](#usage)
-- [Architecture](#architecture)
-- [Testing](#testing)
-- [Roadmap](#roadmap)
-- [Contributing](#contributing)
-- [License](#license)
-- [Author](#author)
-
-## Installation
+Stdlib functions: `sma`, `ema`, `std`, `mean`, `zscore`, `rank`, `ts_rank`, `returns`, `delta`, plus OHLCV field accessors (`open`, `high`, `low`, `close`, `volume`). The compiler turns a `.dsl` source file into a Python callable `strategy(prices_df) -> weights Series` clipped to `[-1, 1]`.
 
 ```bash
 git clone https://github.com/JoshRiang/strategy-dsl.git
@@ -42,71 +26,81 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Quick Start
-
 ```bash
-# Run the CLI
-python -m <module> --help
+# Compile a strategy file
+python -m dsl --compile dsl/examples/momentum.dsl
 
-# Run the example
-python examples/run_example.py
+# Compile and backtest on SPY from 2010
+python -m dsl --compile dsl/examples/momentum.dsl --backtest SPY --start 2010-01-01
+
+# Save weights to CSV
+python -m dsl --compile dsl/examples/momentum.dsl --backtest SPY --out weights.csv
 ```
 
-## Usage
+Example `.dsl` file (`dsl/examples/momentum.dsl`):
 
-See the [Examples](#examples) section below and the inline docstrings.
+```dsl
+# 12-1 month momentum strategy
+signal = ts_rank(returns(close, 60), 252)
+weight = rank(signal) - 0.5
+when weight > 0.4: long
+when weight < -0.4: short
+```
 
 ```python
-from strategy_dsl import core_function
+from dsl import compile_src
 
-result = core_function(input_data)
-print(result)
+src = """
+signal = ts_rank(returns(close, 60), 252)
+weight = rank(signal) - 0.5
+when weight > 0.4: long
+when weight < -0.4: short
+"""
+
+strategy = compile_src(src)
+
+import pandas as pd, numpy as np
+dates = pd.date_range('2020-01-01', periods=400, freq='D')
+close = 100 * np.exp(np.cumsum(np.random.default_rng(0).normal(0.0005, 0.02, 400)))
+df = pd.DataFrame({'Open': close, 'High': close, 'Low': close, 'Close': close, 'Volume': 1_000_000}, index=dates)
+
+weights = strategy(df)
+print(f'Mean weight: {weights.mean():.3f}, min: {weights.min():.3f}, max: {weights.max():.3f}')
 ```
 
-## Architecture
+Project structure:
 
 ```
 strategy-dsl/
-├── src/                  # Core package
-├── tests/                # Unit tests
-├── examples/             # Usage examples
-├── docs/                 # Additional documentation
-├── README.md
+├── dsl/
+│   ├── __init__.py       # exports: Parser, ParseError, Compiler, CompilerError, STDLIB
+│   ├── ast_nodes.py      # Node, Number, Variable, Call, BinaryOp, UnaryOp, Assignment, When, Block
+│   ├── grammar.py        # informal grammar documentation
+│   ├── parser.py         # recursive-descent Parser: tokenize + parse (precedence climbing)
+│   ├── compiler.py       # Compiler: compile(block) -> strategy(df) -> weights; compile_src
+│   ├── stdlib.py         # STDLIB: sma, ema, std, mean, zscore, rank, ts_rank, returns, delta + OHLCV
+│   ├── backtest.py       # run_backtest: compiled strategy × yfinance -> JSON report
+│   └── __main__.py       # CLI: --compile --backtest --start --out
+├── dsl/examples/
+│   ├── momentum.dsl
+│   ├── mean_reversion.dsl
+│   └── multi_factor.dsl
+├── tests/
+│   ├── conftest.py
+│   ├── test_dsl.py       # tokenizer, parser precedence, when clauses, realistic momentum program
+│   ├── test_compiler.py  # compiled strategies on synthetic prices: stdlib, operators, when, multi-statement
+│   └── test_parser.py    # parser/compiler integration
+├── requirements.txt      # pandas, numpy, yfinance
 ├── LICENSE
-├── CHANGELOG.md
-├── CONTRIBUTING.md
-└── requirements.txt
+└── README.md
 ```
 
-## Testing
+Testing:
 
 ```bash
 pytest -v
 ```
 
-Tests use synthetic data to ensure deterministic results without external dependencies.
+License: MIT — see [LICENSE](LICENSE).
 
-## Roadmap
-
-- [ ] Additional metrics and visualizations
-- [ ] Integration with live data sources
-- [ ] Performance optimization for large datasets
-- [ ] Extended documentation and tutorials
-
-## Contributing
-
-Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details.
-
-## License
-
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-
-## Author
-
-**Joshua Riangkamang** — [github.com/JoshRiang](https://github.com/JoshRiang)
-
----
-
-<p align="center">
-  Built as part of a quantitative finance and software engineering portfolio.
-</p>
+Author: Joshua Riangkamang — [github.com/JoshRiang](https://github.com/JoshRiang)
