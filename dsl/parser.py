@@ -61,6 +61,19 @@ def tokenize(src: str) -> List[Token]:
                 j += 1
             tokens.append(Token('NUMBER', src[i:j], i))
             i = j
+        elif c in '<>=!':
+            two = src[i:i+2]
+            if two in ('>=', '<=', '==', '!='):
+                tokens.append(Token(two, two, i))
+                i += 2
+            elif c in '<>':
+                tokens.append(Token(c, c, i))
+                i += 1
+            elif c == '=':
+                tokens.append(Token('=', c, i))
+                i += 1
+            else:
+                raise ParseError(f"Unexpected character {c!r} at {i}")
         elif c in '+-*/()=,:':
             tokens.append(Token(c, c, i))
             i += 1
@@ -122,7 +135,15 @@ class Parser:
         raise ParseError(f"Unknown action: {action_tok.kind}")
 
     def parse_expr(self) -> Node:
-        return self.parse_add_sub()
+        return self.parse_comparison()
+
+    def parse_comparison(self) -> Node:
+        left = self.parse_add_sub()
+        while self.peek() and self.peek().kind in ('>', '<', '>=', '<=', '==', '!='):
+            op = self.eat(self.peek().kind).value
+            right = self.parse_add_sub()
+            left = BinaryOp(op, left, right)
+        return left
 
     def parse_add_sub(self) -> Node:
         left = self.parse_mul_div()
@@ -152,7 +173,8 @@ class Parser:
             raise ParseError("Unexpected end of input")
         if t.kind == 'NUMBER':
             self.pos += 1
-            return Number(float(t.value))
+            # Keep integer literals as int: pandas rejects float window/period args.
+            return Number(int(t.value) if '.' not in t.value else float(t.value))
         if t.kind == 'IDENT':
             if self.peek(1) and self.peek(1).kind == '(':
                 name = self.eat('IDENT').value
@@ -177,3 +199,7 @@ class Parser:
 
 def parse(src: str) -> Block:
     return Parser(tokenize(src)).parse()
+
+
+# Public alias used by the test suite and documented in the README.
+DSLSyntaxError = ParseError

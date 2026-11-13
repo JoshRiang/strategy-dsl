@@ -53,3 +53,11 @@ class When(Node):
 @dataclass
 class Block(Node):
     statements: List[Node]
+
+
+# `Constant` is the name the tests and the docs use for a literal number.
+Constant = Number
+
+
+# `Program` is the old public name for the root node; `Block` is the current one.
+Program = Block

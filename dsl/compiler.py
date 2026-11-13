@@ -68,6 +68,12 @@ class Compiler:
             if node.op == '-': return l - r
             if node.op == '*': return l * r
             if node.op == '/': return l / r
+            if node.op == '>': return l > r
+            if node.op == '<': return l < r
+            if node.op == '>=': return l >= r
+            if node.op == '<=': return l <= r
+            if node.op == '==': return l == r
+            if node.op == '!=': return l != r
         if isinstance(node, UnaryOp):
             v = self._eval(node.operand, df, local)
             return -v
@@ -78,3 +84,7 @@ def compile_src(src: str) -> Callable:
     from .parser import parse
     block = parse(src)
     return Compiler().compile(block)
+
+
+# Public alias used by the test suite and documented in the README.
+DSLRuntimeError = CompilerError
