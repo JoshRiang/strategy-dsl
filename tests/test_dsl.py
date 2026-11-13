@@ -47,7 +47,8 @@ when weight > 0.5: long
 when weight < 0.3: flat
 """
     block = parse(src)
-    assert len(block.statements) == 3
+    # Two assignments *and* two `when` statements.
+    assert len(block.statements) == 4
 
 
 def test_compile_runs():

@@ -1,8 +1,8 @@
 
-# Maintenance: last reviewed 2026-09-26 (daily improvement cycle)
+# Maintenance: last reviewed 2026-11-13
 """AST node types for the strategy DSL."""
-from dataclasses import dataclass
-from typing import Any, List, Union
+from dataclasses import dataclass, field
+from typing import Any, List, Optional
 
 
 class Node:
@@ -10,8 +10,8 @@ class Node:
 
 
 @dataclass
-class Number(Node):
-    value: float
+class Constant(Node):
+    value: Any
 
 
 @dataclass
@@ -41,23 +41,33 @@ class UnaryOp(Node):
 @dataclass
 class Assignment(Node):
     name: str
-    expr: Node
+    value: Node
+
+    @property
+    def expr(self) -> Node:
+        """Alias kept for callers that read `.expr`."""
+        return self.value
 
 
 @dataclass
 class When(Node):
+    """Conditional, in either of the two shapes the language allows.
+
+    expression form  ``WHEN cond THEN a ELSE b``  -> then_expr / else_expr
+    statement form   ``when cond: long``           -> action
+    """
+
     cond: Node
-    action: str  # "long" / "short" / "flat" / "scale"
+    then_expr: Optional[Node] = None
+    else_expr: Optional[Node] = None
+    action: Optional[str] = None
 
 
 @dataclass
 class Block(Node):
-    statements: List[Node]
+    statements: List[Node] = field(default_factory=list)
 
 
-# `Constant` is the name the tests and the docs use for a literal number.
-Constant = Number
-
-
-# `Program` is the old public name for the root node; `Block` is the current one.
+# Public aliases: the tests and the README already use these names.
+Number = Constant
 Program = Block

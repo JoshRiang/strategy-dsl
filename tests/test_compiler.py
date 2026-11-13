@@ -69,11 +69,21 @@ class TestCompileSmoke:
 
 class TestStdlib:
     def test_sma_matches_pandas(self):
-        strat = compile_source("weight = sma(Close, 10)\n")
+        from dsl.stdlib import sma
+
         prices = make_prices()
-        out = strat(prices)
-        expected = prices["Close"].rolling(10, min_periods=1).mean()
-        pd.testing.assert_series_equal(out, expected.rename("weight"), check_names=False)
+
+        # The function itself must match pandas exactly.
+        pd.testing.assert_series_equal(
+            sma(prices["Close"], 10),
+            prices["Close"].rolling(10, min_periods=1).mean(),
+            check_names=False,
+        )
+
+        # The compiler wires it through and clips the resulting weight to
+        # [-1, 1]; Close sits around 100, so the output saturates at 1.0.
+        out = compile_source("weight = sma(Close, 10)\n")(prices)
+        assert (out == 1.0).all()
 
     def test_rank_is_pct_in_0_1(self):
         strat = compile_source("weight = rank(Close)\n")
